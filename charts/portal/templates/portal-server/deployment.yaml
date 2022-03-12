@@ -1,0 +1,182 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "portal.servername" . }}
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.portalServer.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "portal.portalServerSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: portal-server
+        {{- include "portal.portalServerSelectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "portal.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.portalServer.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.portalServer.securityContext | nindent 12 }}
+          image: "{{ .Values.portalServer.image.repository }}:{{ .Values.portalServer.image.tag }}"
+          imagePullPolicy: {{ .Values.portalServer.image.pullPolicy }}
+          volumeMounts:
+          - mountPath: /run
+            name: run-volume
+          env:
+          - name: "FLASK_CONFIG"
+            value: "{{ .Values.portalServer.flask.config }}"
+          - name: "FLASK_ENV"
+            value: "{{ .Values.portalServer.flask.env }}"
+          - name: "FLASK_APP"
+            value: "{{ .Values.portalServer.flask.app }}"
+          - name: "WEB_CONCURRENCY"
+            value: "{{ .Values.dashboardServer.webConcurrency }}"
+          - name: "DATABASE_URI"
+            value: "postgresql://postgres:{{ .Values.global.postgresql.postgresqlPassword }}@{{ template "postgresql.fullname" . }}:5432/{{ .Values.portalServer.dbvar }}"
+          - name: "SECRET_KEY"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "portal.portalserverKeysSecretName" . }}
+                key: secret
+          - name: "JWT_SECRET_KEY"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "portal.portalserverKeysSecretName" . }}
+                key: jwt
+          - name: "SECURITY_PASSWORD_SALT"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "portal.portalserverKeysSecretName" . }}
+                key: passwordSalt
+          - name: "HOST_ADDRESS"
+            value: "{{ .Values.dashboardServer.hostAddress }}"
+          - name: "HOST_ADDRESS_PORT"
+            value: "{{ .Values.dashboardServer.hostAddressPort }}"
+          - name: DID_RESOLVER_URL
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: resolverUrl
+          - name: DID_USER_DID
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: userDID
+          - name: DID_AGENT_DID
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: agentDID
+          - name: DID_AGENT_KEY_NAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: agentKeyName
+          - name: DID_AGENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: agentSecret 
+          - name: "SECURITY_SEND_REGISTER_EMAIL"
+            value: "{{ .Values.portalServer.security.send.registerEmail }}"      
+          - name: "SECURITY_SEND_PASSWORD_RESET_EMAIL"
+            value: "{{ .Values.portalServer.security.send.passwordResetEmail }}"
+          - name: "SECURITY_SEND_PASSWORD_RESET_NOTICE_EMAIL"
+            value: "{{ .Values.portalServer.security.send.passwordResetNoticeEmail }}"
+          - name: "AUTH_GITHUB_CLIENT_ID"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "portal.portalserverAuthSecretName" . }}
+                key: githubID
+          - name: "AUTH_GITHUB_CLIENT_SECRET"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "portal.portalserverAuthSecretName" . }}
+                key: githubSecret
+          - name: "AUTH_GOOGLE_CLIENT_ID"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "portal.portalserverAuthSecretName" . }}
+                key: googleID
+          - name: "AUTH_GOOGLE_CLIENT_SECRET"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "portal.portalserverAuthSecretName" . }}
+                key: googleSecret
+          - name: "PORTAL_ADMIN_EMAIL"
+            value: "{{ .Values.portalServer.adminEmail }}"
+          - name: "PORTAL_ADMIN_PASSWORD"
+            value: {{ .Values.portalServer.adminPassword }}
+          - name: "MAIL_SERVER"
+            value: "{{ .Values.portalServer.mail.server }}"
+          - name: "MAIL_PORT"
+            value: "{{ .Values.portalServer.mail.port }}"
+          - name: "MAIL_USE_TLS"
+            value: "{{ .Values.portalServer.mail.useTLS }}"
+          - name: "MAIL_USE_SSL"
+            value: "{{ .Values.portalServer.mail.useSSL }}"
+          - name: "MAIL_USERNAME"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "portal.portalserverMailSecretName" . }}
+                key: username
+          - name: "MAIL_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "portal.portalserverMailSecretName" . }}
+                key: password
+          - name: "MAIL_DEFAULT_SENDER"
+            value: "{{ .Values.portalServer.mail.defaultSender }}"
+          - name: "DASHBOARD_URL"
+            value: "http://{{ include "portal.dashboardservername" . }}:{{ .Values.dashboardServer.service.port }}"
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          # volumeMounts:
+          #   - name: conf
+          #     mountPath: /etc/nginx/conf.d
+          resources:
+            {{- toYaml .Values.portalServer.resources | nindent 12 }}
+
+      # volumes:
+      #   - name: conf
+      #     configMap:
+      #       name: "{{ include "portal.clientname" . }}"
+
+    {{- with .Values.portalServer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.portalServer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.portalServer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      volumes:
+      - name: run-volume
+        emptyDir:
+          medium: Memory
+          sizeLimit: "10Mi"

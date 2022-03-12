@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "portal.frontproxyname" . }}"
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+data:
+  default.conf: |
+    upstream flask {
+        server {{ include "portal.servername" . }}:{{ .Values.portalServer.service.port }};
+    }
+
+    upstream django {
+        server {{ include "portal.dashboardservername" . }}:{{ .Values.dashboardServer.service.port }};
+    }
+
+    upstream dashboard {
+        server {{ include "portal.dashboardclientname" . }}:{{ .Values.dashboardClient.service.port }};
+    }
+
+    upstream portal {
+        server {{ include "portal.portalclientname" . }}:{{ .Values.portalClient.service.port }};
+    }
+
+    server {
+        listen       80;
+        server_name  localhost;
+
+        location / {
+            proxy_pass         http://portal;
+            proxy_set_header   Host $http_host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host $http_host;
+            proxy_set_header   X-Forwarded-Port $http_port;
+        }
+
+        location /dashboard {
+            proxy_pass         http://dashboard;
+            proxy_set_header   Host $http_host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host $http_host;
+            proxy_set_header   X-Forwarded-Port $http_port;
+        }
+
+        location /api {
+            proxy_pass         http://flask;
+            proxy_set_header   Host $http_host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host $http_host;
+            proxy_set_header   X-Forwarded-Port $http_port;
+        }
+
+        location /dashboard-api {
+            proxy_pass         http://django/dashboard-api;
+            proxy_set_header   Host $http_host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host $http_host;
+            proxy_set_header   X-Forwarded-Port $http_port;
+        }
+
+        location /admin {
+            proxy_pass         http://flask;
+            proxy_set_header   Host $http_host;
+            proxy_set_header   X-Real-IP $remote_addr;
+            proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Host $http_host;
+            proxy_set_header   X-Forwarded-Port $http_port;
+        }
+
+        location ~/dashboard/api/(.*)$ {
+            proxy_set_header X-Real-IP  $remote_addr;
+            proxy_set_header X-Forwarded-For $remote_addr;
+            proxy_set_header Host $host;
+            proxy_pass http://django/api/$1$is_args$args;
+            proxy_redirect off;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location ~/dashboard/admin/(.*)$ {
+            proxy_set_header X-Real-IP  $remote_addr;
+            proxy_set_header X-Forwarded-For $remote_addr;
+            proxy_set_header Host $host;
+            proxy_pass http://django/admin/$1;
+            proxy_redirect off;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location ~/dashboard/admin(.*)$ {
+            proxy_set_header X-Real-IP  $remote_addr;
+            proxy_set_header X-Forwarded-For $remote_addr;
+            proxy_set_header Host $host;
+            proxy_pass http://django/admin$1;
+            proxy_redirect off;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location ~/dashboard/static-admin/(.*)$ {
+            proxy_set_header X-Real-IP  $remote_addr;
+            proxy_set_header X-Forwarded-For $remote_addr;
+            proxy_set_header Host $host;
+            proxy_pass http://django/static-admin/$1;
+            proxy_redirect off;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        #error_page  404              /404.html;
+
+        # redirect server error pages to the static page /50x.html
+        #
+        # error_page   500 502 503 504  /50x.html;
+        # location = /50x.html {
+        #     root   /usr/share/nginx/html;
+        # }
+    }

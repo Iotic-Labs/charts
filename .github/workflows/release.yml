@@ -19,7 +19,20 @@ jobs:
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
 
+      - name: Configure Helm
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+
+      - name: Helm Deps
+        run: |
+          for dir in $(ls -d charts/*); do
+            helm dependency update $dir;
+          done
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.1.0
+        with:
+          config: cr.yaml
+          charts_repo_url: https://iotic-labs.github.io/charts
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"

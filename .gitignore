@@ -1,0 +1,5 @@
+.cr-index
+.cr-release-packages
+cr.tar.gz
+.cache
+Chart.lock

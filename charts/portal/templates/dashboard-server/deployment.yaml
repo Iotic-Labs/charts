@@ -1,0 +1,117 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "portal.dashboardservername" . }}
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.dashboardServer.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "portal.dashboardServerSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: portal-dashserver
+        {{- include "portal.dashboardServerSelectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "portal.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.dashboardServer.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.dashboardServer.securityContext | nindent 12 }}
+          image: "{{ .Values.dashboardServer.image.repository }}:{{ .Values.dashboardServer.image.tag }}"
+          imagePullPolicy: {{ .Values.dashboardServer.image.pullPolicy }}
+          volumeMounts:
+          - mountPath: /run
+            name: run-volume
+          env:
+          - name: "WAIT_HOSTS"
+            value: "{{ template "postgresql.fullname" . }}:5432"
+          - name: "DATABASE_URI"
+            value: "postgresql://postgres:{{ .Values.global.postgresql.postgresqlPassword }}@{{ template "postgresql.fullname" . }}:5432/{{ .Values.dashboardServer.dbvar }}"
+          - name: "DJANGO_SETTINGS_MODULE"
+            value: "{{ .Values.dashboardServer.djangoSettingsModule }}"
+          - name: "IOTIC_API"
+            value: "http://{{ include "portal.servername" . }}:{{ .Values.portalServer.service.port }}/api/portal"
+          - name: "WEB_CONCURRENCY"
+            value: "{{ .Values.dashboardServer.webConcurrency }}"
+          - name: DJANGO_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.dashboardserverSecretName" . }}
+                key: djangoSecret
+          - name: "HOST_ADDRESS"
+            value: "{{ .Values.dashboardServer.hostAddress }}"
+          - name: "HOST_ADDRESS_PORT"
+            value: "{{ .Values.dashboardServer.hostAddressPort }}"
+          - name: DID_RESOLVER_URL
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: resolverUrl
+          - name: DID_TOKEN_DURATION
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: tokenDuration
+          - name: DID_USER_DID
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: userDID
+          - name: DID_AGENT_DID
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: agentDID
+          - name: DID_AGENT_KEY_NAME
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: agentKeyName
+          - name: DID_AGENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include  "portal.DIDSecretName" . }}
+                key: agentSecret
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.dashboardServer.resources | nindent 12 }}
+    {{- with .Values.dashboardServer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.dashboardServer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.dashboardServer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      volumes:
+      - name: run-volume
+        emptyDir:
+          medium: Memory
+          sizeLimit: "10Mi"
+
