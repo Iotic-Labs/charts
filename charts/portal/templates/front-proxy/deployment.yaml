@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "portal.frontproxyname" . }}
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.frontProxy.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "portal.frontProxySelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: portal-frontproxy
+        {{- include "portal.frontProxySelectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "portal.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.frontProxy.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.frontProxy.securityContext | nindent 12 }}
+          image: "{{ .Values.frontProxy.image.repository }}:{{ .Values.frontProxy.image.tag }}"
+          imagePullPolicy: {{ .Values.frontProxy.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/nginx/conf.d
+          resources:
+            {{- toYaml .Values.frontProxy.resources | nindent 12 }}
+
+      volumes:
+        - name: conf
+          configMap:
+            name: "{{ include "portal.frontproxyname" . }}"
+
+    {{- with .Values.frontProxy.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.frontProxy.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.frontProxy.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+

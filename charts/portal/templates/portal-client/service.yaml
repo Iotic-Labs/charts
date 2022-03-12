@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "portal.portalclientname" . }}
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.portalClient.service.type }}
+  ports:
+    - port: {{ .Values.portalClient.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "portal.portalClientSelectorLabels" . | nindent 4 }}

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "portal.frontproxyname" . }}
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.frontProxy.service.type }}
+  ports:
+    - port: {{ .Values.frontProxy.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "portal.frontProxySelectorLabels" . | nindent 4 }}

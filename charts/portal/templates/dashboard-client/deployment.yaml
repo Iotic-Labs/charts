@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "portal.dashboardclientname" . }}
+  labels:
+    {{- include "portal.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.dashboardClient.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "portal.dashboardClientSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: portal-dashclient
+        {{- include "portal.dashboardClientSelectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "portal.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.dashboardClient.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.dashboardClient.securityContext | nindent 12 }}
+          image: "{{ .Values.dashboardClient.image.repository }}:{{ .Values.dashboardClient.image.tag }}"
+          imagePullPolicy: {{ .Values.dashboardClient.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          # volumeMounts:
+          #   - name: conf
+          #     mountPath: /etc/nginx/conf.d
+          resources:
+            {{- toYaml .Values.dashboardClient.resources | nindent 12 }}
+
+      # volumes:
+      #   - name: conf
+      #     configMap:
+      #       name: "{{ include "portal.clientname" . }}"
+
+    {{- with .Values.dashboardClient.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.dashboardClient.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.dashboardClient.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+
