@@ -12,10 +12,10 @@ description: iotic portal helm chart with postgres
 type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
-version: 0.0.1
+version: 3.1.162-pr644
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application.
-appVersion: v0.0.83
+appVersion: 3.1.162-pr644
 dependencies:
-- name: postgresql
-  version: 8.10.4
+  - name: postgresql
+    version: 8.10.4
