@@ -13,7 +13,7 @@ entries:
     name: portal
     type: application
     urls:
-    - https://github.com/Iotic-Labs/charts/releases/download/portal-3.1.162-pr644/portal-3.1.162-pr644.tgz
+    - https://github.com/Iotic-Labs/charts/archive/refs/tags/portal-3.1.162-pr644.tar.gz
     version: 3.1.162-pr644
   - apiVersion: v2
     appVersion: v0.0.83
