@@ -18,5 +18,4 @@ version: 0.1.0
 appVersion: v0.0.83
 dependencies:
 - name: postgresql
-  repository: 'file://charts/postgresql'
   version: 8.10.4
