@@ -23,13 +23,9 @@ jobs:
         run: |
           pwd
           ls -la /home/runner/work/charts/charts/charts/portal/charts/postgresql
-          ls -la /home/runner/work/charts/charts/charts/portal/charts
-          ls -la /home/runner/work/charts/charts/charts/portal
-          ls -la /home/runner/work/charts/charts/charts
-          ls -la /home/runner/work/charts/charts
-          ls -la /home/runner/work/charts
+          helm version
           find .
-          env
+          env | sort
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.1.0
