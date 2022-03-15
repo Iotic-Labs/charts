@@ -24,7 +24,6 @@ jobs:
           pwd
           ls -la /home/runner/work/charts/charts/charts/portal/charts/postgresql
           helm version
-          helm repo list
           find .
           env | sort
 
