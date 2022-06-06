@@ -69,7 +69,7 @@ portalServer:
   image:
     repository: quay.io/iotic_labs/iotic-portal-server
     pullPolicy: IfNotPresent
-    tag: 3.1.531
+    tag: 3.1.545
   nameOverride: ""
   fullnameOverride: ""
   podSecurityContext: {}
@@ -140,7 +140,7 @@ portalClient:
   image:
     repository: quay.io/iotic_labs/iotic-portal-client
     pullPolicy: IfNotPresent
-    tag: 3.1.531
+    tag: 3.1.545
   nameOverride: ""
   fullnameOverride: ""
   podSecurityContext: {}
@@ -164,7 +164,7 @@ dashboardServer:
   image:
     repository: quay.io/iotic_labs/iotic-dashboard-server
     pullPolicy: IfNotPresent
-    tag: 3.1.531
+    tag: 3.1.545
   nameOverride: ""
   fullnameOverride: ""
   podSecurityContext: {}
@@ -195,7 +195,7 @@ dashboardClient:
   image:
     repository: quay.io/iotic_labs/iotic-dashboard-client
     pullPolicy: IfNotPresent
-    tag: 3.1.531
+    tag: 3.1.545
   nameOverride: ""
   fullnameOverride: ""
   podSecurityContext: {}
