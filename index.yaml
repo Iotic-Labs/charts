@@ -2,6 +2,20 @@ apiVersion: v1
 entries:
   portal:
   - apiVersion: v2
+    appVersion: 3.1.791
+    created: "2022-07-27T09:54:52.816638817Z"
+    dependencies:
+    - name: postgresql
+      repository: ""
+      version: 8.10.4
+    description: iotic portal helm chart with postgres
+    digest: 32a5d80e07d75df6e152a03890b026cd6c9b2a76d2dbc88cdcf247d8b0697170
+    name: portal
+    type: application
+    urls:
+    - https://github.com/Iotic-Labs/charts/releases/download/portal-3.1.791/portal-3.1.791.tgz
+    version: 3.1.791
+  - apiVersion: v2
     appVersion: 3.1.788
     created: "2022-07-27T09:03:01.469239886Z"
     dependencies:
